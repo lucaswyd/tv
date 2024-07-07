@@ -1,27 +1,41 @@
-document.getElementById('loadButton').addEventListener('click', () => {
+function loadUrl() {
     const url = document.getElementById('urlInput').value;
-    const iframe = document.getElementById('webFrame');
-    iframe.src = addHttp(url);
-});
-
-function addHttp(url) {
-    if (!/^https?:\/\//i.test(url)) {
-        url = 'http://' + url;
-    }
-    return url;
+    document.getElementById('urlIframe').src = url;
 }
 
-// Snapping cursor script (only works for same-origin iframes)
-document.getElementById('webFrame').addEventListener('load', function() {
-    const iframe = document.getElementById('webFrame');
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+document.getElementById('urlIframe').addEventListener('load', () => {
+    const iframeDocument = document.getElementById('urlIframe').contentDocument;
 
-    iframeDoc.addEventListener('mousemove', (e) => {
-        const elements = iframeDoc.elementsFromPoint(e.clientX, e.clientY);
-        const nearestElement = elements[0]; // First element is the one under the cursor
-        if (nearestElement) {
-            nearestElement.style.outline = '2px solid #673ab7';
-            nearestElement.style.cursor = 'pointer';
+    iframeDocument.addEventListener('mousemove', (e) => {
+        const elements = iframeDocument.querySelectorAll('*');
+        let closestElement = null;
+        let minDistance = Infinity;
+
+        elements.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const distance = Math.hypot(rect.left - e.clientX, rect.top - e.clientY);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestElement = el;
+            }
+        });
+
+        if (closestElement) {
+            const rect = closestElement.getBoundingClientRect();
+            const offsetX = rect.left + rect.width / 2;
+            const offsetY = rect.top + rect.height / 2;
+            const iframeRect = document.getElementById('urlIframe').getBoundingClientRect();
+
+            const event = new MouseEvent('mousemove', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: iframeRect.left + offsetX,
+                clientY: iframeRect.top + offsetY
+            });
+
+            window.dispatchEvent(event);
         }
     });
 });
